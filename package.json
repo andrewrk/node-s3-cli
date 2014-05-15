@@ -1,0 +1,17 @@
+{
+  "name": "s3-cli",
+  "version": "0.0.0",
+  "description": "command line utility to go along with s3 module",
+  "main": "index.js",
+  "bin": {
+    "s3-cli": "./cli.js"
+  },
+  "author": "Andrew Kelley <superjoe30@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "s3": "^1.0.0",
+    "osenv": "0.0.3",
+    "ini": "^1.2.0",
+    "minimist": "^0.1.0"
+  }
+}
