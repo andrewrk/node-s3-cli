@@ -87,7 +87,9 @@ function cmdSync() {
   var haveProgress = false;
   console.error("fetching file list");
   syncer.on('progress', function() {
-    process.stderr.write("\rProgress: " + syncer.progressAmount + "/" + syncer.progressTotal +
+    var percent = Math.floor(syncer.progressAmount / syncer.progressTotal * 100);
+    process.stderr.write("\rProgress: " +
+      syncer.progressAmount + "/" + syncer.progressTotal + " " + percent + "%" +
       "                    ");
   });
   syncer.on('end', function() {
@@ -133,8 +135,10 @@ function cmdDelete() {
     };
     var deleter = client.deleteDir(params);
     deleter.on('progress', function() {
-      process.stderr.write("\rProgress: " + deleter.progressAmount + "/" + deleter.progressTotal +
-      "                    ");
+      var percent = Math.floor(deleter.progressAmount / deleter.progressTotal * 100);
+      process.stderr.write("\rProgress: " +
+        deleter.progressAmount + "/" + deleter.progressTotal + " " + percent + "%" +
+        "                    ");
     });
     deleter.on('end', function() {
       process.stderr.write("\n");
