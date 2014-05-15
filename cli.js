@@ -19,6 +19,7 @@ var fns = {
   'sync': cmdSync,
   'ls': cmdList,
   'help': cmdHelp,
+  'del': cmdDelete,
 };
 
 var isS3UrlRe = /^[sS]3:\/\//;
@@ -115,6 +116,38 @@ function cmdList() {
       console.log(object.LastModified + " " + object.Size + " " + object.Key);
     });
   });
+}
+
+function cmdDelete() {
+  var parts = parseS3Url(args._[0]);
+  if (args.recursive) {
+    doDeleteDir();
+  } else {
+    doDeleteObject();
+  }
+
+  function doDeleteDir() {
+    var params = {
+      Bucket: parts.bucket,
+      Prefix: parts.key,
+    };
+    var deleter = client.deleteDir(params);
+    deleter.on('progress', function() {
+      process.stderr.write("\rProgress: " + deleter.progressAmount + "/" + deleter.progressTotal +
+      "                    ");
+    });
+    deleter.on('end', function() {
+      process.stderr.write("\n");
+    });
+  }
+
+  function doDeleteObject() {
+    var params = {
+      Bucket: parts.bucket,
+      Key: parts.key,
+    };
+    client.deleteObjects(params);
+  }
 }
 
 function cmdHelp() {
