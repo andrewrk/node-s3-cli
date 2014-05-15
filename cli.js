@@ -9,9 +9,10 @@ var s3 = require('s3');
 var url = require('url');
 var args = minimist(process.argv.slice(2), {
   'default': {
-    config: path.join(osenv.home(), '.s3cfg'),
+    'config': path.join(osenv.home(), '.s3cfg'),
+    'delete-removed': false,
   },
-  'boolean': ['recursive'],
+  'boolean': ['recursive', 'deleteRemoved'],
 });
 
 var fns = {
@@ -19,6 +20,8 @@ var fns = {
   'ls': cmdList,
   'help': cmdHelp,
 };
+
+var isS3UrlRe = /^[sS]3:\/\//;
 
 var client;
 fs.readFile(args.config, {encoding: 'utf8'}, function(err, contents) {
@@ -50,9 +53,45 @@ fs.readFile(args.config, {encoding: 'utf8'}, function(err, contents) {
   fn();
 });
 
-
 function cmdSync() {
+  var source = args._[0];
+  var dest = args._[1];
 
+  var sourceS3 = isS3Url(source);
+  var destS3 = isS3Url(dest);
+
+  var localDir, s3Url, method;
+  if (sourceS3 && !destS3) {
+    localDir = dest;
+    s3Url = source;
+    method = client.downloadDir;
+  } else if (!sourceS3 && destS3) {
+    localDir = source;
+    s3Url = dest;
+    method = client.uploadDir;
+  } else {
+    console.error("one target must be from S3, the other must be from local file system.");
+    process.exit(1);
+  }
+  var parts = parseS3Url(s3Url);
+  var params = {
+    deleteRemoved: args['delete-removed'],
+    localDir: localDir,
+    s3Params: {
+      Prefix: parts.key,
+      Bucket: parts.bucket,
+    },
+  };
+  var syncer = method.call(client, params);
+  var haveProgress = false;
+  console.error("fetching file list");
+  syncer.on('progress', function() {
+    process.stderr.write("\rProgress: " + syncer.progressAmount + "/" + syncer.progressTotal +
+      "                    ");
+  });
+  syncer.on('end', function() {
+    process.stderr.write("\n");
+  });
 }
 
 function cmdList() {
@@ -97,4 +136,8 @@ function parseS3Url(s3Url) {
     bucket: parts.hostname,
     key: parts.path.replace(/^\//, ""),
   };
+}
+
+function isS3Url(str) {
+  return isS3UrlRe.test(str);
 }
