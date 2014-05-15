@@ -13,5 +13,17 @@
     "osenv": "0.0.3",
     "ini": "^1.2.0",
     "minimist": "^0.1.0"
-  }
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/andrewrk/node-s3-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/andrewrk/node-s3-cli/issues"
+  },
+  "homepage": "https://github.com/andrewrk/node-s3-cli"
 }
