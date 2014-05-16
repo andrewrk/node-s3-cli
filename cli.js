@@ -2,6 +2,8 @@
 
 var minimist = require('minimist');
 var osenv = require('osenv');
+var filesize = require('file-size');
+var mime = require('mime');
 var ini = require('ini');
 var fs = require('fs');
 var path = require('path');
@@ -20,6 +22,7 @@ var fns = {
   'ls': cmdList,
   'help': cmdHelp,
   'del': cmdDelete,
+  'put': cmdPut,
 };
 
 var isS3UrlRe = /^[sS]3:\/\//;
@@ -75,26 +78,19 @@ function cmdSync() {
     process.exit(1);
   }
   var parts = parseS3Url(s3Url);
+  var acl = getAcl();
   var params = {
     deleteRemoved: args['delete-removed'],
     localDir: localDir,
     s3Params: {
       Prefix: parts.key,
       Bucket: parts.bucket,
+      ACL: acl,
     },
   };
   var syncer = method.call(client, params);
-  var haveProgress = false;
   console.error("fetching file list");
-  syncer.on('progress', function() {
-    var percent = Math.floor(syncer.progressAmount / syncer.progressTotal * 100);
-    process.stderr.write("\rProgress: " +
-      syncer.progressAmount + "/" + syncer.progressTotal + " " + percent + "%" +
-      "                    ");
-  });
-  syncer.on('end', function() {
-    process.stderr.write("\n");
-  });
+  setUpProgress(syncer);
 }
 
 function cmdList() {
@@ -134,15 +130,7 @@ function cmdDelete() {
       Prefix: parts.key,
     };
     var deleter = client.deleteDir(params);
-    deleter.on('progress', function() {
-      var percent = Math.floor(deleter.progressAmount / deleter.progressTotal * 100);
-      process.stderr.write("\rProgress: " +
-        deleter.progressAmount + "/" + deleter.progressTotal + " " + percent + "%" +
-        "                    ");
-    });
-    deleter.on('end', function() {
-      process.stderr.write("\n");
-    });
+    setUpProgress(deleter, true);
   }
 
   function doDeleteObject() {
@@ -158,6 +146,23 @@ function cmdDelete() {
     };
     client.deleteObjects(params);
   }
+}
+
+function cmdPut() {
+  var source = args._[0];
+  var dest = args._[1];
+  var parts = parseS3Url(dest);
+  var params = {
+    localFile: source,
+    s3Params: {
+      Bucket: parts.bucket,
+      Key: parts.Key,
+      ACL: getAcl(),
+      ContentType: getContentType(source),
+    },
+  };
+  var uploader = client.uploadFile(params);
+  setUpProgress(uploader);
 }
 
 function cmdHelp() {
@@ -183,4 +188,46 @@ function parseS3Url(s3Url) {
 
 function isS3Url(str) {
   return isS3UrlRe.test(str);
+}
+
+function getContentType(filename) {
+  if (args['default-mime-type']) {
+    mime.default_type = args['default-mime-type'];
+  }
+  if (args['no-guess-mime-type']) {
+    return mime.default_type;
+  } else {
+    return mime.lookup(filename);
+  }
+}
+
+function getAcl() {
+  var acl = null;
+  if (args['acl-public'] || args.P) {
+    acl = 'public-read';
+  } else if (args['acl-private']) {
+    acl = 'private';
+  }
+  return acl;
+}
+
+function setUpProgress(o, notBytes) {
+  var start = new Date();
+  o.on('progress', function() {
+    var percent = Math.floor(o.progressAmount / o.progressTotal * 100);
+    var line = "\rProgress: " +
+      o.progressAmount + "/" + o.progressTotal + " " + percent + "%";
+    if (!notBytes) {
+      var now = new Date();
+      var seconds = (now - start) / 1000;
+      var bytesPerSec = o.progressAmount / seconds;
+      var humanSpeed = filesize(bytesPerSec).human({jedec: true}) + '/s';
+      line += " " + humanSpeed;
+    }
+    line += "                    ";
+    process.stderr.write(line);
+  });
+  o.on('end', function() {
+    process.stderr.write("\n");
+  });
 }

@@ -12,7 +12,9 @@
     "s3": "^1.0.0",
     "osenv": "0.0.3",
     "ini": "^1.2.0",
-    "minimist": "^0.1.0"
+    "minimist": "^0.1.0",
+    "mime": "^1.2.11",
+    "file-size": "0.0.3"
   },
   "devDependencies": {},
   "scripts": {
