@@ -52,3 +52,21 @@ Example:
 ```
 s3-cli del [--recursive] s3://bucket/key/on/s3/
 ```
+
+### put
+
+Uploads a file to S3.
+
+Example:
+
+```
+s3-cli put /path/to/file s3://bucket/key/on/s3
+```
+
+Options:
+
+ * `--acl-public` or `-P` - Store objects with ACL allowing read for anyone.
+ * `--default-mime-type` - Default MIME-type for stored objects. Application
+   default is `binary/octet-stream`.
+ * `--no-guess-mime-type` - Don't guess MIME-type and use the default type
+   instead.
