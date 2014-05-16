@@ -148,7 +148,13 @@ function cmdDelete() {
   function doDeleteObject() {
     var params = {
       Bucket: parts.bucket,
-      Key: parts.key,
+      Delete: {
+        Objects: [
+          {
+            Key: parts.key,
+          },
+        ],
+      }
     };
     client.deleteObjects(params);
   }
