@@ -35,6 +35,8 @@ Example:
 s3-cli sync [--delete-removed] /path/to/folder/ s3://bucket/key/on/s3/
 ```
 
+Supports the same options as `put`.
+
 #### Sync a directory on S3 to disk
 
 Example:
@@ -70,3 +72,6 @@ Options:
    default is `binary/octet-stream`.
  * `--no-guess-mime-type` - Don't guess MIME-type and use the default type
    instead.
+ * `--add-header=NAME:VALUE` - Add a given HTTP header to the upload request. Can be
+   used  multiple times. For instance set 'Expires' or 'Cache-Control' headers
+   (or both) using this options if you like.

@@ -65,6 +65,7 @@ function cmdSync() {
   var destS3 = isS3Url(dest);
 
   var localDir, s3Url, method;
+  var s3Params = {};
   if (sourceS3 && !destS3) {
     localDir = dest;
     s3Url = source;
@@ -73,25 +74,27 @@ function cmdSync() {
     localDir = source;
     s3Url = dest;
     method = client.uploadDir;
+    s3Params.ACL = getAcl();
   } else {
     console.error("one target must be from S3, the other must be from local file system.");
     process.exit(1);
   }
   var parts = parseS3Url(s3Url);
-  var acl = getAcl();
+  s3Params.Prefix = parts.key;
+  s3Params.Bucket = parts.bucket;
+
+  parseAddHeaders(s3Params);
+
   var params = {
     deleteRemoved: args['delete-removed'],
     getS3Params: getS3Params,
     localDir: localDir,
-    s3Params: {
-      Prefix: parts.key,
-      Bucket: parts.bucket,
-      ACL: acl,
-    },
+    s3Params: s3Params,
   };
   var syncer = method.call(client, params);
   console.error("fetching file list");
   setUpProgress(syncer);
+
 }
 
 function getS3Params(filePath, stat, callback) {
@@ -160,14 +163,16 @@ function cmdPut() {
   var source = args._[0];
   var dest = args._[1];
   var parts = parseS3Url(dest);
+  var s3Params = {
+    Bucket: parts.bucket,
+    Key: parts.Key,
+    ACL: getAcl(),
+    ContentType: getContentType(source),
+  };
+  parseAddHeaders(s3Params);
   var params = {
     localFile: source,
-    s3Params: {
-      Bucket: parts.bucket,
-      Key: parts.Key,
-      ACL: getAcl(),
-      ContentType: getContentType(source),
-    },
+    s3Params: s3Params,
   };
   var uploader = client.uploadFile(params);
   setUpProgress(uploader);
@@ -242,4 +247,26 @@ function setUpProgress(o, notBytes) {
     if (!sawAnyProgress) return;
     process.stderr.write("\n");
   });
+}
+
+function parseAddHeaders(s3Params) {
+  var addHeaders = args['add-header'];
+  if (addHeaders) {
+    if (Array.isArray(addHeaders)) {
+      addHeaders.forEach(handleAddHeader);
+    } else {
+      handleAddHeader(addHeaders);
+    }
+  }
+  function handleAddHeader(header) {
+    var match = header.match(/^(.*):\s*(.*)$/);
+    if (!match) {
+      console.error("Improperly formatted header:", header);
+      process.exit(1);
+    }
+    var headerName = match[1];
+    var paramName = headerName.replace(/-/g, '');
+    var paramValue = match[2];
+    s3Params[paramName] = paramValue;
+  }
 }
