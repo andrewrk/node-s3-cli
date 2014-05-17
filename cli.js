@@ -81,6 +81,7 @@ function cmdSync() {
   var acl = getAcl();
   var params = {
     deleteRemoved: args['delete-removed'],
+    getS3Params: getS3Params,
     localDir: localDir,
     s3Params: {
       Prefix: parts.key,
@@ -91,6 +92,13 @@ function cmdSync() {
   var syncer = method.call(client, params);
   console.error("fetching file list");
   setUpProgress(syncer);
+}
+
+function getS3Params(filePath, stat, callback) {
+  console.error("Uploading", filePath);
+  callback(null, {
+    ContentType: getContentType(filePath),
+  });
 }
 
 function cmdList() {
@@ -213,7 +221,10 @@ function getAcl() {
 
 function setUpProgress(o, notBytes) {
   var start = new Date();
+  var sawAnyProgress = false;
   o.on('progress', function() {
+    if (o.progressTotal === 0) return;
+    sawAnyProgress = true;
     var percent = Math.floor(o.progressAmount / o.progressTotal * 100);
     var line = "\rProgress: " +
       o.progressAmount + "/" + o.progressTotal + " " + percent + "%";
@@ -228,6 +239,7 @@ function setUpProgress(o, notBytes) {
     process.stderr.write(line);
   });
   o.on('end', function() {
+    if (!sawAnyProgress) return;
     process.stderr.write("\n");
   });
 }
