@@ -5,9 +5,8 @@ Command line utility frontend to [node-s3-client](https://github.com/andrewrk/no
 ## Features
 
  * Compatible with [s3cmd](https://github.com/s3tools/s3cmd)'s config file
- * list directories
- * sync a local directory to S3 and vice versa
- * delete a directory on S3
+ * Supports a subset of s3cmd's commands and parameters
+   - including `put`, `del`, `ls`, `sync`
 
 ## Install
 

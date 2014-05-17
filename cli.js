@@ -9,12 +9,20 @@ var fs = require('fs');
 var path = require('path');
 var s3 = require('s3');
 var url = require('url');
+var http = require('http');
+var https = require('https');
 var args = minimist(process.argv.slice(2), {
   'default': {
     'config': path.join(osenv.home(), '.s3cfg'),
     'delete-removed': false,
+    'max-sockets': 30,
+    'insecure': false,
   },
-  'boolean': ['recursive', 'deleteRemoved'],
+  'boolean': [
+    'recursive',
+    'deleteRemoved',
+    'insecure',
+  ],
 });
 
 var fns = {
@@ -45,10 +53,14 @@ fs.readFile(args.config, {encoding: 'utf8'}, function(err, contents) {
     process.exit(1);
     return;
   }
+  var maxSockets = parseInt(args['max-sockets'], 10);
+  http.globalAgent.maxSockets = maxSockets;
+  https.globalAgent.maxSockets = maxSockets;
   client = s3.createClient({
     s3Options: {
       accessKeyId: accessKeyId,
       secretAccessKey: secretAccessKey,
+      sslEnabled: !args.insecure,
     },
   });
   var cmd = args._.shift();
