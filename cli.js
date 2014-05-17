@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+require('graceful-fs');
 var minimist = require('minimist');
 var osenv = require('osenv');
 var filesize = require('file-size');
@@ -77,16 +78,19 @@ function cmdSync() {
   var destS3 = isS3Url(dest);
 
   var localDir, s3Url, method;
+  var getS3Params;
   var s3Params = {};
   if (sourceS3 && !destS3) {
     localDir = dest;
     s3Url = source;
     method = client.downloadDir;
+    getS3Params = downloadGetS3Params;
   } else if (!sourceS3 && destS3) {
     localDir = source;
     s3Url = dest;
     method = client.uploadDir;
     s3Params.ACL = getAcl();
+    getS3Params = uploadGetS3Params;
   } else {
     console.error("one target must be from S3, the other must be from local file system.");
     process.exit(1);
@@ -104,16 +108,20 @@ function cmdSync() {
     s3Params: s3Params,
   };
   var syncer = method.call(client, params);
-  console.error("fetching file list");
+  process.stderr.write("Listing objects...");
   setUpProgress(syncer);
-
 }
 
-function getS3Params(filePath, stat, callback) {
+function uploadGetS3Params(filePath, stat, callback) {
   console.error("Uploading", filePath);
   callback(null, {
     ContentType: getContentType(filePath),
   });
+}
+
+function downloadGetS3Params(filePath, s3Object, callback) {
+  console.error("Downloading", filePath);
+  callback(null, {});
 }
 
 function cmdList() {
@@ -236,12 +244,19 @@ function getAcl() {
   return acl;
 }
 
-function setUpProgress(o, notBytes) {
-  var start = new Date();
+function setUpProgress(o, notBytes, notObjects) {
+  var start;
   var sawAnyProgress = false;
   o.on('progress', function() {
+    if (o.objectsFound != null && o.progressAmount === 0) {
+      process.stderr.write("\rListing objects... " + o.objectsFound + " objects found          ");
+      sawAnyProgress = true;
+    }
     if (o.progressTotal === 0) return;
-    sawAnyProgress = true;
+    if (!start) {
+      sawAnyProgress = true;
+      start = new Date();
+    }
     var percent = Math.floor(o.progressAmount / o.progressTotal * 100);
     var line = "\rProgress: " +
       o.progressAmount + "/" + o.progressTotal + " " + percent + "%";
