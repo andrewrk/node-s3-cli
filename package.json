@@ -1,6 +1,6 @@
 {
   "name": "s3-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "command line utility to go along with s3 module",
   "main": "index.js",
   "bin": {
