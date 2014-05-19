@@ -6,13 +6,54 @@ Command line utility frontend to [node-s3-client](https://github.com/andrewrk/no
 
  * Compatible with [s3cmd](https://github.com/s3tools/s3cmd)'s config file
  * Supports a subset of s3cmd's commands and parameters
-   - including `put`, `del`, `ls`, `sync`
+   - including `put`, `get`, `del`, `ls`, `sync`
 
 ## Install
 
 `sudo npm install -g s3-cli`
 
 ## Documentation
+
+### put
+
+Uploads a file to S3.
+
+Example:
+
+```
+s3-cli put /path/to/file s3://bucket/key/on/s3
+```
+
+Options:
+
+ * `--acl-public` or `-P` - Store objects with ACL allowing read for anyone.
+ * `--default-mime-type` - Default MIME-type for stored objects. Application
+   default is `binary/octet-stream`.
+ * `--no-guess-mime-type` - Don't guess MIME-type and use the default type
+   instead.
+ * `--add-header=NAME:VALUE` - Add a given HTTP header to the upload request. Can be
+   used  multiple times. For instance set 'Expires' or 'Cache-Control' headers
+   (or both) using this options if you like.
+
+### get
+
+Downloads a file from S3.
+
+Example:
+
+```
+s3-cli get s3://bucket/key/on/s3 /path/to/file
+```
+
+### del
+
+Deletes an object or a directory on S3.
+
+Example:
+
+```
+s3-cli del [--recursive] s3://bucket/key/on/s3/
+```
 
 ### ls
 
@@ -43,34 +84,3 @@ Example:
 ```
 s3-cli sync [--delete-removed] s3://bucket/key/on/s3/ /path/to/folder/
 ```
-
-### del
-
-Deletes an object or a directory on S3.
-
-Example:
-
-```
-s3-cli del [--recursive] s3://bucket/key/on/s3/
-```
-
-### put
-
-Uploads a file to S3.
-
-Example:
-
-```
-s3-cli put /path/to/file s3://bucket/key/on/s3
-```
-
-Options:
-
- * `--acl-public` or `-P` - Store objects with ACL allowing read for anyone.
- * `--default-mime-type` - Default MIME-type for stored objects. Application
-   default is `binary/octet-stream`.
- * `--no-guess-mime-type` - Don't guess MIME-type and use the default type
-   instead.
- * `--add-header=NAME:VALUE` - Add a given HTTP header to the upload request. Can be
-   used  multiple times. For instance set 'Expires' or 'Cache-Control' headers
-   (or both) using this options if you like.

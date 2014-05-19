@@ -32,9 +32,10 @@ var fns = {
   'help': cmdHelp,
   'del': cmdDelete,
   'put': cmdPut,
+  'get': cmdGet,
 };
 
-var isS3UrlRe = /^[sS]3:\/\//;
+var s3UrlRe = /^[sS]3:\/\/(.*?)\/(.*)/;
 
 var client;
 fs.readFile(args.config, {encoding: 'utf8'}, function(err, contents) {
@@ -185,7 +186,7 @@ function cmdPut() {
   var parts = parseS3Url(dest);
   var s3Params = {
     Bucket: parts.bucket,
-    Key: parts.Key,
+    Key: parts.key,
     ACL: getAcl(),
     ContentType: getContentType(source),
   };
@@ -198,6 +199,24 @@ function cmdPut() {
   setUpProgress(uploader);
 }
 
+function cmdGet() {
+  var source = args._[0];
+  var dest = args._[1];
+  var parts = parseS3Url(source);
+  if (!dest) {
+    dest = path.basename(source);
+  }
+  var params = {
+    localFile: dest,
+    s3Params: {
+      Bucket: parts.bucket,
+      Key: parts.key,
+    },
+  };
+  var downloader = client.downloadFile(params);
+  setUpProgress(downloader);
+}
+
 function cmdHelp() {
   console.log("Usage: s3 (command) (command arguments)");
   console.log("Commands:", Object.keys(fns).join(" "));
@@ -208,19 +227,19 @@ function parseS3Url(s3Url) {
     console.error("Expected S3 URL argument");
     process.exit(1);
   }
-  var parts = url.parse(s3Url);
-  if (parts.protocol !== 's3:') {
+  var match = s3Url.match(s3UrlRe);
+  if (!match) {
     console.error("Not a valid S3 URL:", s3Url);
     process.exit(1);
   }
   return {
-    bucket: parts.hostname,
-    key: parts.path.replace(/^\//, ""),
+    bucket: match[1],
+    key: match[2],
   };
 }
 
 function isS3Url(str) {
-  return isS3UrlRe.test(str);
+  return s3UrlRe.test(str);
 }
 
 function getContentType(filename) {
