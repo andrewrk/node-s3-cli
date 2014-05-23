@@ -33,6 +33,8 @@ var fns = {
   'del': cmdDelete,
   'put': cmdPut,
   'get': cmdGet,
+  'cp': cmdCp,
+  'mv': cmdMv,
 };
 
 var s3UrlRe = /^[sS]3:\/\/(.*?)\/(.*)/;
@@ -217,8 +219,38 @@ function cmdGet() {
   setUpProgress(downloader);
 }
 
+function cmdCp() {
+  var source = args._[0];
+  var dest = args._[1];
+  var sourceParts = parseS3Url(source);
+  var destParts = parseS3Url(dest);
+
+  var s3Params = {
+    CopySource: sourceParts.bucket + '/' + sourceParts.key,
+    Bucket: destParts.bucket,
+    Key: destParts.key,
+  };
+
+  client.copyObject(s3Params);
+}
+
+function cmdMv() {
+  var source = args._[0];
+  var dest = args._[1];
+  var sourceParts = parseS3Url(source);
+  var destParts = parseS3Url(dest);
+
+  var s3Params = {
+    CopySource: sourceParts.bucket + '/' + sourceParts.key,
+    Bucket: destParts.bucket,
+    Key: destParts.key,
+  };
+
+  client.moveObject(s3Params);
+}
+
 function cmdHelp() {
-  console.log("Usage: s3 (command) (command arguments)");
+  console.log("Usage: s3-cli (command) (command arguments)");
   console.log("Commands:", Object.keys(fns).join(" "));
 }
 

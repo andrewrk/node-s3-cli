@@ -6,7 +6,7 @@ Command line utility frontend to [node-s3-client](https://github.com/andrewrk/no
 
  * Compatible with [s3cmd](https://github.com/s3tools/s3cmd)'s config file
  * Supports a subset of s3cmd's commands and parameters
-   - including `put`, `get`, `del`, `ls`, `sync`
+   - including `put`, `get`, `del`, `ls`, `sync`, `cp`, `mv`
 
 ## Install
 
@@ -83,4 +83,24 @@ Example:
 
 ```
 s3-cli sync [--delete-removed] s3://bucket/key/on/s3/ /path/to/folder/
+```
+
+### cp
+
+Copy an object which is already on S3.
+
+Example:
+
+```
+s3-cli cp s3://sourcebucket/source/key s3://destbucket/dest/key
+```
+
+### mv
+
+Move an object which is already on S3.
+
+Example:
+
+```
+s3-cli mv s3://sourcebucket/source/key s3://destbucket/dest/key
 ```
