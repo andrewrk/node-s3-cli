@@ -313,8 +313,9 @@ function setUpProgress(o, notBytes) {
       start = new Date();
     }
     var percent = Math.floor(o.progressAmount / o.progressTotal * 100);
-    var line = "\rProgress: " +
-      o.progressAmount + "/" + o.progressTotal + " " + percent + "%";
+    var amt = notBytes ? o.progressAmount : fmtBytes(o.progressAmount);
+    var total = notBytes ? o.progressTotal : fmtBytes(o.progressTotal);
+    var line = "\rProgress: " + amt + "/" + total + " " + percent + "%";
     if (!notBytes) {
       var now = new Date();
       var seconds = (now - start) / 1000;
