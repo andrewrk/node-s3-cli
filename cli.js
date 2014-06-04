@@ -295,12 +295,16 @@ function getAcl() {
   return acl;
 }
 
-function setUpProgress(o, notBytes, notObjects) {
+function setUpProgress(o, notBytes) {
   var start;
   var sawAnyProgress = false;
   o.on('progress', function() {
-    if (o.objectsFound != null && o.progressAmount === 0) {
-      process.stderr.write("\rListing objects... " + o.objectsFound + " objects found          ");
+    var dataHashed = o.progressMd5Amount;
+    var hashTotal = o.progressMd5Total;
+    if (!o.startedTransfer) {
+      process.stderr.write("\r" + o.objectsFound + " objects found, " +
+        fmtBytes(o.progressMd5Amount) + "/" + fmtBytes(o.progressMd5Total) +
+        " MD5 computed        ");
       sawAnyProgress = true;
     }
     if (o.progressTotal === 0) return;
@@ -315,7 +319,7 @@ function setUpProgress(o, notBytes, notObjects) {
       var now = new Date();
       var seconds = (now - start) / 1000;
       var bytesPerSec = o.progressAmount / seconds;
-      var humanSpeed = filesize(bytesPerSec).human({jedec: true}) + '/s';
+      var humanSpeed = fmtBytes(bytesPerSec) + '/s';
       line += " " + humanSpeed;
     }
     line += "                    ";
@@ -347,4 +351,8 @@ function parseAddHeaders(s3Params) {
     var paramValue = match[2];
     s3Params[paramName] = paramValue;
   }
+}
+
+function fmtBytes(byteCount) {
+  return filesize(byteCount).human({jedec: true});
 }
