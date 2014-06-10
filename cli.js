@@ -18,6 +18,7 @@ var args = minimist(process.argv.slice(2), {
     'delete-removed': false,
     'max-sockets': 30,
     'insecure': false,
+    'region': 'us-east-1'
   },
   'boolean': [
     'recursive',
@@ -65,6 +66,7 @@ fs.readFile(args.config, {encoding: 'utf8'}, function(err, contents) {
       accessKeyId: accessKeyId,
       secretAccessKey: secretAccessKey,
       sslEnabled: !args.insecure,
+      region: args.region,
     },
   });
   var cmd = args._.shift();
