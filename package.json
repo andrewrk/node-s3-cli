@@ -9,12 +9,12 @@
   "author": "Andrew Kelley <superjoe30@gmail.com>",
   "license": "ISC",
   "dependencies": {
-    "file-size": "0.0.3",
-    "ini": "~1.2.0",
+    "file-size": "0.0.5",
+    "ini": "~1.2.1",
     "mime": "~1.2.11",
-    "minimist": "~0.1.0",
-    "osenv": "0.0.3",
-    "s3": "~2.0.0"
+    "minimist": "~0.2.0",
+    "osenv": "~0.1.0",
+    "s3": "~3.0.1"
   },
   "devDependencies": {},
   "scripts": {

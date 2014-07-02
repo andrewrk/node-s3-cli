@@ -15,7 +15,7 @@ var args = minimist(process.argv.slice(2), {
   'default': {
     'config': path.join(osenv.home(), '.s3cfg'),
     'delete-removed': false,
-    'max-sockets': 30,
+    'max-sockets': 20,
     'insecure': false,
     'region': 'us-east-1'
   },
@@ -296,9 +296,10 @@ function getAcl() {
 }
 
 function setUpProgress(o, notBytes) {
-  var start = new Date();
-  printProgress();
-  var progressInterval = setInterval(printProgress, 100);
+  var start = null;
+  var printFn = process.stderr.isTTY ? printProgress : noop;
+  printFn();
+  var progressInterval = setInterval(printFn, 100);
   o.on('end', function() {
     clearInterval(progressInterval);
     process.stderr.write("\ndone\n");
@@ -306,9 +307,8 @@ function setUpProgress(o, notBytes) {
 
   function printProgress() {
     var percent = Math.floor(o.progressAmount / o.progressTotal * 100);
-    if (isNaN(percent)) percent = 0;
-    var amt = notBytes ? o.progressAmount : fmtBytes(o.progressAmount);
-    var total = notBytes ? o.progressTotal : fmtBytes(o.progressTotal);
+    var amt = notBytes ? String(o.progressAmount) : fmtBytes(o.progressAmount);
+    var total = notBytes ? String(o.progressTotal) : fmtBytes(o.progressTotal);
     var parts = [];
     if (o.filesFound > 0 && !o.doneFindingFiles) {
       parts.push(o.filesFound + " files");
@@ -322,8 +322,11 @@ function setUpProgress(o, notBytes) {
     if (o.progressMd5Amount > 0 && !o.doneMd5) {
       parts.push(fmtBytes(o.progressMd5Amount) + "/" + fmtBytes(o.progressMd5Total) + " MD5");
     }
-    if (total > 0) {
-      parts.push(amt + "/" + total + " " + percent + "% done");
+    if (o.progressTotal > 0) {
+      if (!start) start = new Date();
+      var part = amt + "/" + total;
+      if (!isNaN(percent)) part += " " + percent + "% done";
+      parts.push(part);
       if (!notBytes) {
         var now = new Date();
         var seconds = (now - start) / 1000;
@@ -368,3 +371,5 @@ function fmtBytes(byteCount) {
     return filesize(byteCount).human({jedec: true});
   }
 }
+
+function noop() {}
