@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-require('graceful-fs');
 var minimist = require('minimist');
 var osenv = require('osenv');
 var filesize = require('file-size');
@@ -113,19 +112,18 @@ function cmdSync() {
     s3Params: s3Params,
   };
   var syncer = method.call(client, params);
-  process.stderr.write("Listing objects...");
   setUpProgress(syncer);
 }
 
 function uploadGetS3Params(filePath, stat, callback) {
-  console.error("Uploading", filePath);
+  //console.error("Uploading", filePath);
   callback(null, {
     ContentType: getContentType(filePath),
   });
 }
 
 function downloadGetS3Params(filePath, s3Object, callback) {
-  console.error("Downloading", filePath);
+  //console.error("Downloading", filePath);
   callback(null, {});
 }
 
@@ -298,40 +296,47 @@ function getAcl() {
 }
 
 function setUpProgress(o, notBytes) {
-  var start;
-  var sawAnyProgress = false;
-  o.on('progress', function() {
-    var dataHashed = o.progressMd5Amount;
-    var hashTotal = o.progressMd5Total;
-    if (!o.startedTransfer) {
-      process.stderr.write("\r" + o.objectsFound + " objects found, " +
-        fmtBytes(o.progressMd5Amount) + "/" + fmtBytes(o.progressMd5Total) +
-        " MD5 computed        ");
-      sawAnyProgress = true;
-    }
-    if (o.progressTotal === 0) return;
-    if (!start) {
-      sawAnyProgress = true;
-      start = new Date();
-    }
+  var start = new Date();
+  printProgress();
+  var progressInterval = setInterval(printProgress, 100);
+  o.on('end', function() {
+    clearInterval(progressInterval);
+    process.stderr.write("\ndone\n");
+  });
+
+  function printProgress() {
     var percent = Math.floor(o.progressAmount / o.progressTotal * 100);
+    if (isNaN(percent)) percent = 0;
     var amt = notBytes ? o.progressAmount : fmtBytes(o.progressAmount);
     var total = notBytes ? o.progressTotal : fmtBytes(o.progressTotal);
-    var line = "\rProgress: " + amt + "/" + total + " " + percent + "%";
-    if (!notBytes) {
-      var now = new Date();
-      var seconds = (now - start) / 1000;
-      var bytesPerSec = o.progressAmount / seconds;
-      var humanSpeed = fmtBytes(bytesPerSec) + '/s';
-      line += " " + humanSpeed;
+    var parts = [];
+    if (o.filesFound > 0 && !o.doneFindingFiles) {
+      parts.push(o.filesFound + " files");
     }
-    line += "                    ";
+    if (o.objectsFound > 0 && !o.doneFindingObjects) {
+      parts.push(o.objectsFound + " objects");
+    }
+    if (o.deleteTotal > 0) {
+      parts.push(o.deleteAmount + "/" + o.deleteTotal + " deleted");
+    }
+    if (o.progressMd5Amount > 0 && !o.doneMd5) {
+      parts.push(fmtBytes(o.progressMd5Amount) + "/" + fmtBytes(o.progressMd5Total) + " MD5");
+    }
+    if (total > 0) {
+      parts.push(amt + "/" + total + " " + percent + "% done");
+      if (!notBytes) {
+        var now = new Date();
+        var seconds = (now - start) / 1000;
+        var bytesPerSec = o.progressAmount / seconds;
+        var humanSpeed = fmtBytes(bytesPerSec) + '/s';
+        parts.push(humanSpeed);
+      }
+    }
+    var line = parts.join(", ");
+    process.stderr.clearLine();
+    process.stderr.cursorTo(0);
     process.stderr.write(line);
-  });
-  o.on('end', function() {
-    if (!sawAnyProgress) return;
-    process.stderr.write("\n");
-  });
+  }
 }
 
 function parseAddHeaders(s3Params) {
@@ -357,5 +362,9 @@ function parseAddHeaders(s3Params) {
 }
 
 function fmtBytes(byteCount) {
-  return filesize(byteCount).human({jedec: true});
+  if (byteCount <= 0) {
+    return "0B";
+  } else {
+    return filesize(byteCount).human({jedec: true});
+  }
 }

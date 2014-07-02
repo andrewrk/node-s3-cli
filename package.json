@@ -10,12 +10,11 @@
   "license": "ISC",
   "dependencies": {
     "file-size": "0.0.3",
-    "graceful-fs": "^2.0.3",
-    "ini": "^1.2.0",
-    "mime": "^1.2.11",
-    "minimist": "^0.1.0",
+    "ini": "~1.2.0",
+    "mime": "~1.2.11",
+    "minimist": "~0.1.0",
     "osenv": "0.0.3",
-    "s3": "^2.0.0"
+    "s3": "~2.0.0"
   },
   "devDependencies": {},
   "scripts": {
