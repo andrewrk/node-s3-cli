@@ -17,13 +17,22 @@ var args = minimist(process.argv.slice(2), {
     'delete-removed': false,
     'max-sockets': 20,
     'insecure': false,
-    'region': 'us-east-1'
+    'region': 'us-east-1',
+    'acl-public': false,
+    'acl-private': false,
+    'no-guess-mime-type': false,
   },
   'boolean': [
     'recursive',
-    'deleteRemoved',
+    'delete-removed',
     'insecure',
+    'acl-public',
+    'acl-private',
+    'no-guess-mime-type',
   ],
+  'alias': {
+    'P': 'acl-public',
+  },
 });
 
 var fns = {
@@ -186,10 +195,14 @@ function cmdPut() {
   var source = args._[0];
   var dest = args._[1];
   var parts = parseS3Url(dest);
+  if (/\/$/.test(parts.key)) {
+    parts.key += path.basename(source);
+  }
+  var acl = getAcl();
   var s3Params = {
     Bucket: parts.bucket,
     Key: parts.key,
-    ACL: getAcl(),
+    ACL: acl,
     ContentType: getContentType(source),
   };
   parseAddHeaders(s3Params);
@@ -198,7 +211,16 @@ function cmdPut() {
     s3Params: s3Params,
   };
   var uploader = client.uploadFile(params);
-  setUpProgress(uploader);
+  var doneText;
+  if (acl === 'public-read') {
+    var publicUrl = args.insecure ?
+      s3.getPublicUrlHttp(parts.bucket, parts.key) :
+      s3.getPublicUrl(parts.bucket, parts.key, args.region);
+    doneText = "Public URL: " + publicUrl;
+  } else {
+    doneText = "done";
+  }
+  setUpProgress(uploader, false, doneText);
 }
 
 function cmdGet() {
@@ -287,7 +309,7 @@ function getContentType(filename) {
 
 function getAcl() {
   var acl = null;
-  if (args['acl-public'] || args.P) {
+  if (args['acl-public']) {
     acl = 'public-read';
   } else if (args['acl-private']) {
     acl = 'private';
@@ -295,14 +317,15 @@ function getAcl() {
   return acl;
 }
 
-function setUpProgress(o, notBytes) {
+function setUpProgress(o, notBytes, doneText) {
   var start = null;
+  doneText = doneText || "done";
   var printFn = process.stderr.isTTY ? printProgress : noop;
   printFn();
   var progressInterval = setInterval(printFn, 100);
   o.on('end', function() {
     clearInterval(progressInterval);
-    process.stderr.write("\ndone\n");
+    process.stderr.write("\n" + doneText + "\n");
   });
 
   function printProgress() {
