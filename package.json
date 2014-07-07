@@ -7,7 +7,7 @@
     "s3-cli": "./cli.js"
   },
   "author": "Andrew Kelley <superjoe30@gmail.com>",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "file-size": "0.0.5",
     "ini": "~1.2.1",
