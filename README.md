@@ -1,12 +1,17 @@
 # s3 cli
 
 Command line utility frontend to [node-s3-client](https://github.com/andrewrk/node-s3-client).
+Inspired by [s3cmd](https://github.com/s3tools/s3cmd) and attempts to be a
+drop-in replacement.
 
 ## Features
 
  * Compatible with [s3cmd](https://github.com/s3tools/s3cmd)'s config file
  * Supports a subset of s3cmd's commands and parameters
    - including `put`, `get`, `del`, `ls`, `sync`, `cp`, `mv`
+ * When syncing directories, instead of uploading one file at a time, it
+   uploads many files in parallel resulting in more bandwidth.
+ * Retries on failure.
 
 ## Install
 
