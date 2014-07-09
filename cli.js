@@ -11,16 +11,14 @@ var s3 = require('s3');
 var url = require('url');
 var http = require('http');
 var https = require('https');
-var args = minimist(process.argv.slice(2), {
+var argOptions = {
   'default': {
     'config': path.join(osenv.home(), '.s3cfg'),
     'delete-removed': false,
     'max-sockets': 20,
-    'insecure': false,
     'region': 'us-east-1',
-    'acl-public': false,
-    'acl-private': false,
-    'no-guess-mime-type': false,
+    'default-mime-type': null,
+    'add-header': null,
   },
   'boolean': [
     'recursive',
@@ -33,7 +31,8 @@ var args = minimist(process.argv.slice(2), {
   'alias': {
     'P': 'acl-public',
   },
-});
+};
+var args = minimist(process.argv.slice(2), argOptions);
 
 var fns = {
   'sync': cmdSync,
@@ -45,8 +44,12 @@ var fns = {
   'cp': cmdCp,
   'mv': cmdMv,
 };
+var USAGE_TEXT =
+  "Usage: s3-cli (command) (command arguments)\n" +
+  "Commands: " + Object.keys(fns).join(" ");
 
 var s3UrlRe = /^[sS]3:\/\/(.*?)\/(.*)/;
+barfOnUnexpectedArgs();
 
 var client;
 fs.readFile(args.config, {encoding: 'utf8'}, function(err, contents) {
@@ -84,6 +87,7 @@ fs.readFile(args.config, {encoding: 'utf8'}, function(err, contents) {
 });
 
 function cmdSync() {
+  expectArgCount(2);
   var source = args._[0];
   var dest = args._[1];
 
@@ -137,6 +141,7 @@ function downloadGetS3Params(filePath, s3Object, callback) {
 }
 
 function cmdList() {
+  expectArgCount(1);
   var recursive = args.recursive;
   var s3Url = args._[0];
   var parts = parseS3Url(s3Url);
@@ -160,6 +165,7 @@ function cmdList() {
 }
 
 function cmdDelete() {
+  expectArgCount(1);
   var parts = parseS3Url(args._[0]);
   if (args.recursive) {
     doDeleteDir();
@@ -192,6 +198,7 @@ function cmdDelete() {
 }
 
 function cmdPut() {
+  expectArgCount(2);
   var source = args._[0];
   var dest = args._[1];
   var parts = parseS3Url(dest);
@@ -224,6 +231,7 @@ function cmdPut() {
 }
 
 function cmdGet() {
+  expectArgCount(2);
   var source = args._[0];
   var dest = args._[1];
   var parts = parseS3Url(source);
@@ -242,6 +250,7 @@ function cmdGet() {
 }
 
 function cmdCp() {
+  expectArgCount(2);
   var source = args._[0];
   var dest = args._[1];
   var sourceParts = parseS3Url(source);
@@ -257,6 +266,7 @@ function cmdCp() {
 }
 
 function cmdMv() {
+  expectArgCount(2);
   var source = args._[0];
   var dest = args._[1];
   var sourceParts = parseS3Url(source);
@@ -272,8 +282,7 @@ function cmdMv() {
 }
 
 function cmdHelp() {
-  console.log("Usage: s3-cli (command) (command arguments)");
-  console.log("Commands:", Object.keys(fns).join(" "));
+  console.log(USAGE_TEXT);
 }
 
 function parseS3Url(s3Url) {
@@ -396,3 +405,35 @@ function fmtBytes(byteCount) {
 }
 
 function noop() {}
+
+function barfOnUnexpectedArgs() {
+  var validArgs = {'_': true};
+  addValid(Object.keys(argOptions.default));
+  addValid(Object.keys(argOptions.alias));
+  addValid(argOptions.boolean);
+
+  var invalidArgs = [];
+  for (var argName in args) {
+    if (!validArgs[argName]) {
+      invalidArgs.push(argName);
+    }
+  }
+
+  if (invalidArgs.length) {
+    console.error(USAGE_TEXT);
+    console.error("Unrecognized option(s): " + invalidArgs.join(", "));
+    process.exit(1);
+  }
+
+  function addValid(array) {
+    array.forEach(function(name) {
+      validArgs[name] = true;
+    });
+  }
+}
+
+function expectArgCount(n) {
+  if (args._.length === n) return;
+  console.error("Expected " + n + " arguments, got " + args._.length);
+  process.exit(1);
+}
