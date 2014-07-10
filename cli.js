@@ -47,6 +47,7 @@ var fns = {
 var USAGE_TEXT =
   "Usage: s3-cli (command) (command arguments)\n" +
   "Commands: " + Object.keys(fns).join(" ");
+var splitPathRe = /^(\/?|)([\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
 
 var s3UrlRe = /^[sS]3:\/\/(.*?)\/(.*)/;
 barfOnUnexpectedArgs();
@@ -231,13 +232,16 @@ function cmdPut() {
 }
 
 function cmdGet() {
-  expectArgCount(2);
+  expectArgCount(1, 2);
   var source = args._[0];
   var dest = args._[1];
   var parts = parseS3Url(source);
   if (!dest) {
-    dest = path.basename(source);
+    dest = unixBasename(source);
+  } else if (dest[dest.length - 1] === path.sep) {
+    dest = path.join(dest, unixBasename(source));
   }
+
   var params = {
     localFile: dest,
     s3Params: {
@@ -432,8 +436,22 @@ function barfOnUnexpectedArgs() {
   }
 }
 
-function expectArgCount(n) {
-  if (args._.length === n) return;
-  console.error("Expected " + n + " arguments, got " + args._.length);
-  process.exit(1);
+function expectArgCount(min, max) {
+  if (max == null) max = min;
+  if (args._.length < min) {
+    console.error("Expected at least " + min + " arguments, got " + args._.length);
+    process.exit(1);
+  }
+  if (args._.length > max) {
+    console.error("Expected at most " + max + " arguments, got " + args._.length);
+    process.exit(1);
+  }
+}
+
+// copied from Node.js path module for unix only
+function unixSplitPath(filename) {
+  return splitPathRe.exec(filename).slice(1);
+}
+function unixBasename(path) {
+  return unixSplitPath(path)[2];
 }
