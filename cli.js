@@ -340,6 +340,11 @@ function setUpProgress(o, notBytes, doneText) {
     clearInterval(progressInterval);
     process.stderr.write("\n" + doneText + "\n");
   });
+  o.on('error', function(err) {
+    clearInterval(progressInterval);
+    process.stderr.write("\nError: " + err.message + "\n");
+    process.exit(1);
+  });
 
   function printProgress() {
     var percent = Math.floor(o.progressAmount / o.progressTotal * 100);
