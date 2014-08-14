@@ -11,6 +11,7 @@ drop-in replacement.
    - including `put`, `get`, `del`, `ls`, `sync`, `cp`, `mv`
  * When syncing directories, instead of uploading one file at a time, it
    uploads many files in parallel resulting in more bandwidth.
+ * Uses multipart uploads for large files and uploads each part in parallel.
  * Retries on failure.
 
 ## Install
