@@ -163,6 +163,10 @@ function cmdList() {
       console.log(object.LastModified + " " + object.Size + " " + object.Key);
     });
   });
+  finder.on('error', function(err) {
+    console.error("Error: " + err.message);
+    process.exit(1);
+  });
 }
 
 function cmdDelete() {
@@ -194,7 +198,11 @@ function cmdDelete() {
         ],
       }
     };
-    client.deleteObjects(params);
+    var deleter = client.deleteObjects(params);
+    deleter.on('error', function(err) {
+      console.error("Error: " + err.message);
+      process.exit(1);
+    });
   }
 }
 
@@ -267,7 +275,11 @@ function cmdCp() {
     Key: destParts.key,
   };
 
-  client.copyObject(s3Params);
+  var copier = client.copyObject(s3Params);
+  copier.on('error', function(err) {
+    console.error("Error: " + err.message);
+    process.exit(1);
+  });
 }
 
 function cmdMv() {
@@ -283,7 +295,11 @@ function cmdMv() {
     Key: destParts.key,
   };
 
-  client.moveObject(s3Params);
+  var mover = client.moveObject(s3Params);
+  mover.on('error', function(err) {
+    console.error("Error: " + err.message);
+    process.exit(1);
+  });
 }
 
 function cmdHelp() {
