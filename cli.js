@@ -3,7 +3,6 @@
 var minimist = require('minimist');
 var osenv = require('osenv');
 var filesize = require('file-size');
-var mime = require('mime');
 var ini = require('ini');
 var fs = require('fs');
 var path = require('path');
@@ -124,6 +123,7 @@ function cmdSync() {
     getS3Params: getS3Params,
     localDir: localDir,
     s3Params: s3Params,
+    defaultContentType: getDefaultContentType(),
   };
   var syncer = method.call(client, params);
   setUpProgress(syncer);
@@ -132,7 +132,7 @@ function cmdSync() {
 function uploadGetS3Params(filePath, stat, callback) {
   //console.error("Uploading", filePath);
   callback(null, {
-    ContentType: getContentType(filePath),
+    ContentType: getContentType(),
   });
 }
 
@@ -211,12 +211,13 @@ function cmdPut() {
     Bucket: parts.bucket,
     Key: parts.key,
     ACL: acl,
-    ContentType: getContentType(source),
+    ContentType: getContentType(),
   };
   parseAddHeaders(s3Params);
   var params = {
     localFile: source,
     s3Params: s3Params,
+    defaultContentType: getDefaultContentType(),
   };
   var uploader = client.uploadFile(params);
   var doneText;
@@ -309,15 +310,12 @@ function isS3Url(str) {
   return s3UrlRe.test(str);
 }
 
-function getContentType(filename) {
-  if (args['default-mime-type']) {
-    mime.default_type = args['default-mime-type'];
-  }
-  if (args['no-guess-mime-type']) {
-    return mime.default_type;
-  } else {
-    return mime.lookup(filename);
-  }
+function getContentType() {
+  return args['no-guess-mime-type'] ? null : undefined;
+}
+
+function getDefaultContentType() {
+  return args['default-mime-type'] || null;
 }
 
 function getAcl() {
