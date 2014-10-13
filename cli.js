@@ -2,7 +2,7 @@
 
 var minimist = require('minimist');
 var osenv = require('osenv');
-var filesize = require('file-size');
+var humanSize = require('human-size');
 var ini = require('ini');
 var fs = require('fs');
 var path = require('path');
@@ -421,9 +421,9 @@ function parseAddHeaders(s3Params) {
 
 function fmtBytes(byteCount) {
   if (byteCount <= 0) {
-    return "0B";
+    return "0 B";
   } else {
-    return filesize(byteCount).human({jedec: true});
+    return humanSize(byteCount, 1);
   }
 }
 
