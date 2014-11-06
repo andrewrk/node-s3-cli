@@ -18,6 +18,17 @@ drop-in replacement.
 
 `sudo npm install -g s3-cli`
 
+## Configuration
+
+s3-cli is compatible with s3cmd's config file, so if you already have that
+configured, you're all set. Otherwise you can put this in `~/.s3cfg`:
+
+```ini
+[default]
+access_key = foo
+secret_key = bar
+```
+
 ## Documentation
 
 ### put
