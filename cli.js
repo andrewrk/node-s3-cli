@@ -52,23 +52,31 @@ var s3UrlRe = /^[sS]3:\/\/(.*?)\/(.*)/;
 barfOnUnexpectedArgs();
 
 var client;
-fs.readFile(args.config, {encoding: 'utf8'}, function(err, contents) {
-  if (err) {
-    console.error("This utility needs a config file formatted the same as for s3cmd");
-    process.exit(1);
-    return;
-  }
-  var config = ini.parse(contents);
-  var accessKeyId, secretAccessKey;
-  if (config && config.default) {
-    accessKeyId = config.default.access_key;
-    secretAccessKey = config.default.secret_key;
-  }
-  if (!secretAccessKey || !accessKeyId) {
-    console.error("Config file missing access_key or secret_key");
-    process.exit(1);
-    return;
-  }
+if (process.env.AWS_SECRET_KEY && process.env.AWS_ACCESS_KEY) {
+  setup(process.env.AWS_SECRET_KEY, process.env.AWS_ACCESS_KEY);
+} else {
+  fs.readFile(args.config, {encoding: 'utf8'}, function(err, contents) {
+    if (err) {
+      console.error("This utility needs a config file formatted the same as for s3cmd");
+      process.exit(1);
+      return;
+    }
+    var config = ini.parse(contents);
+    var accessKeyId, secretAccessKey;
+    if (config && config.default) {
+      accessKeyId = config.default.access_key;
+      secretAccessKey = config.default.secret_key;
+    }
+    if (!secretAccessKey || !accessKeyId) {
+      console.error("Config file missing access_key or secret_key");
+      process.exit(1);
+      return;
+    }
+    setup(secretAccessKey, accessKeyId);
+  });
+}
+
+function setup(secretAccessKey, accessKeyId) {
   var maxSockets = parseInt(args['max-sockets'], 10);
   http.globalAgent.maxSockets = maxSockets;
   https.globalAgent.maxSockets = maxSockets;
@@ -84,7 +92,7 @@ fs.readFile(args.config, {encoding: 'utf8'}, function(err, contents) {
   var fn = fns[cmd];
   if (!fn) fn = cmdHelp;
   fn();
-});
+}
 
 function cmdSync() {
   expectArgCount(2);
