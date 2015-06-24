@@ -29,6 +29,8 @@ access_key = foo
 secret_key = bar
 ```
 
+You can also point it to another config file with e.g. `$ s3-cli --config /path/to/s3cmd.conf`.
+
 ## Documentation
 
 ### put
