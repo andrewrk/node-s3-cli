@@ -221,7 +221,7 @@ function cmdPut() {
   var source = args._[0];
   var dest = args._[1];
   var parts = parseS3Url(dest);
-  if (/\/$/.test(parts.key)) {
+  if (/\/$/.test(parts.key) || parts.key == '') {
     parts.key += path.basename(source);
   }
   var acl = getAcl();

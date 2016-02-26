@@ -35,12 +35,13 @@ You can also point it to another config file with e.g. `$ s3-cli --config /path/
 
 ### put
 
-Uploads a file to S3.
+Uploads a file to S3. Assumes the target filename to be the same as the source filename (if none specified)
 
 Example:
 
 ```
 s3-cli put /path/to/file s3://bucket/key/on/s3
+s3-cli put /path/to/source-file s3://bucket/target-file
 ```
 
 Options:
@@ -53,6 +54,7 @@ Options:
  * `--add-header=NAME:VALUE` - Add a given HTTP header to the upload request. Can be
    used  multiple times. For instance set 'Expires' or 'Cache-Control' headers
    (or both) using this options if you like.
+ * `--region=REGION-NAME` - Specify the region (defaults to us-east-1)
 
 ### get
 
